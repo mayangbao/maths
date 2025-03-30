@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>数学函数可视化工具 - 抛物线演示</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            max-width: 1000px;
+            margin: 20px;
+        }
+
+        canvas {
+            border: 2px solid #4a90e2;
+            border-radius: 8px;
+            background: #ffffff;
+        }
+
+        .controls {
+            margin: 20px 0;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        input[type="range"] {
+            width: 200px;
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #4a90e2;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .value-display {
+            font-size: 14px;
+            color: #2d3436;
+            margin-top: 5px;
+        }
+
+        h1 {
+            color: #2d3436;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>二次函数可视化工具 y = ax² + bx + c</h1>
+        <div class="controls">
+            <div class="slider-container">
+                <label>a 系数：</label>
+                <input type="range" id="a" min="-5" max="5" step="0.1" value="1">
+                <span class="value-display" id="aValue">1.0</span>
+            </div>
+            <div class="slider-container">
+                <label>b 系数：</label>
+                <input type="range" id="b" min="-10" max="10" step="0.5" value="0">
+                <span class="value-display" id="bValue">0.0</span>
+            </div>
+            <div class="slider-container">
+                <label>c 系数：</label>
+                <input type="range" id="c" min="-10" max="10" step="0.5" value="0">
+                <span class="value-display" id="cValue">0.0</span>
+            </div>
+        </div>
+        <canvas id="canvas" width="960" height="600"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const aSlider = document.getElementById('a');
+        const bSlider = document.getElementById('b');
+        const cSlider = document.getElementById('c');
+        
+        function drawParabola(a, b, c) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制精细网格
+            ctx.strokeStyle = '#e8e8e8';
+            ctx.lineWidth = 0.5;
+            // 主网格（每50像素）
+            for(let x = 0; x < canvas.width; x += 50) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for(let y = 0; y < canvas.height; y += 50) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+            
+            // 绘制次网格（每25像素）
+            ctx.strokeStyle = '#f0f0f0';
+            for(let x = 0; x < canvas.width; x += 25) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for(let y = 0; y < canvas.height; y += 25) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            // 绘制坐标轴
+            ctx.strokeStyle = '#2d3436';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            // Y轴
+            ctx.moveTo(canvas.width/2, 0);
+            ctx.lineTo(canvas.width/2, canvas.height);
+            // X轴
+            ctx.moveTo(0, canvas.height/2);
+            ctx.lineTo(canvas.width, canvas.height/2);
+            ctx.stroke();
+
+            // 绘制坐标刻度
+            ctx.fillStyle = '#2d3436';
+            ctx.font = '12px Arial';
+            const scale = 40; // 缩放因子
+            const unit = 1;   // 单位长度
+            
+            // X轴刻度
+            for(let x = -Math.floor(canvas.width/(2*scale)); x <= Math.floor(canvas.width/(2*scale)); x++) {
+                const screenX = canvas.width/2 + x * scale;
+                ctx.beginPath();
+                ctx.moveTo(screenX, canvas.height/2 - 5);
+                ctx.lineTo(screenX, canvas.height/2 + 5);
+                ctx.stroke();
+                
+                if(x !== 0) {
+                    ctx.fillText(x, screenX - 5, canvas.height/2 + 20);
+                }
+            }
+            
+            // Y轴刻度
+            for(let y = -Math.floor(canvas.height/(2*scale)); y <= Math.floor(canvas.height/(2*scale)); y++) {
+                const screenY = canvas.height/2 - y * scale;
+                ctx.beginPath();
+                ctx.moveTo(canvas.width/2 - 5, screenY);
+                ctx.lineTo(canvas.width/2 + 5, screenY);
+                ctx.stroke();
+                
+                if(y !== 0) {
+                    ctx.fillText(y, canvas.width/2 + 10, screenY + 4);
+                }
+            }
+
+            // 绘制抛物线
+            ctx.beginPath();
+            ctx.strokeStyle = '#e74c3c';
+            ctx.lineWidth = 3;
+            
+            let firstPoint = true;
+            for(let x = -canvas.width/(2*scale); x <= canvas.width/(2*scale); x += 0.1) {
+                let y = a * x*x + b * x + c;
+                let screenX = canvas.width/2 + x * scale;
+                let screenY = canvas.height/2 - y * scale;
+                
+                if(firstPoint) {
+                    ctx.moveTo(screenX, screenY);
+                    firstPoint = false;
+                } else {
+                    ctx.lineTo(screenX, screenY);
+                }
+            }
+            ctx.stroke();
+        }
+
+        function updateValues() {
+            document.getElementById('aValue').textContent = aSlider.value;
+            document.getElementById('bValue').textContent = bSlider.value;
+            document.getElementById('cValue').textContent = cSlider.value;
+            drawParabola(
+                parseFloat(aSlider.value),
+                parseFloat(bSlider.value),
+                parseFloat(cSlider.value)
+            );
+        }
+
+        aSlider.addEventListener('input', updateValues);
+        bSlider.addEventListener('input', updateValues);
+        cSlider.addEventListener('input', updateValues);
+
+        // 初始绘制
+        updateValues();
+    </script>
+</body>
+</html>
